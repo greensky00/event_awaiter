@@ -5,7 +5,7 @@
  * https://github.com/greensky00
  *
  * Event Awaiter
- * Version: 0.1.0
+ * Version: 0.1.1
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -52,18 +52,22 @@ public:
     }
 
     void wait() {
-        wait_ms(0);
+        wait_us(0);
     }
 
     void wait_ms(size_t time_ms) {
+        wait_us(time_ms * 1000);
+    }
+
+    void wait_us(size_t time_us) {
         AS expected = AS::idle;
         if (status.compare_exchange_strong(expected, AS::ready)) {
             // invoke() has not been invoked yet, wait for it.
             std::unique_lock<std::mutex> l(cvLock);
             expected = AS::ready;
             if (status.compare_exchange_strong(expected, AS::waiting)) {
-                if (time_ms) {
-                    cv.wait_for(l, std::chrono::milliseconds(time_ms));
+                if (time_us) {
+                    cv.wait_for(l, std::chrono::microseconds(time_us));
                 } else {
                     cv.wait(l);
                 }
